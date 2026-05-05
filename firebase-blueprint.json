@@ -1,0 +1,60 @@
+{
+  "entities": {
+    "Athlete": {
+      "title": "Athlete",
+      "description": "A student athlete profile",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "age": { "type": "number" },
+        "primarySport": { "type": "string" },
+        "gender": { "type": "string", "enum": ["Male", "Female", "Other"] },
+        "schoolClass": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "teacherId": { "type": "string" }
+      },
+      "required": ["name", "age", "schoolClass", "teacherId"]
+    },
+    "Trial": {
+      "title": "Trial",
+      "description": "A single performance record for an athlete",
+      "type": "object",
+      "properties": {
+        "athleteId": { "type": "string" },
+        "teacherId": { "type": "string" },
+        "type": { "type": "string", "enum": ["sprint_50m", "sprint_100m", "long_jump", "high_jump", "shuttle_run"] },
+        "value": { "type": "number", "description": "Time in seconds or distance in meters" },
+        "unit": { "type": "string", "enum": ["s", "m"] },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "notes": { "type": "string" }
+      },
+      "required": ["athleteId", "teacherId", "type", "value", "unit", "timestamp"]
+    },
+    "Badge": {
+      "title": "Badge",
+      "description": "An award earned by an athlete",
+      "type": "object",
+      "properties": {
+        "athleteId": { "type": "string" },
+        "badgeType": { "type": "string" },
+        "awardedAt": { "type": "string", "format": "date-time" },
+        "requirementMet": { "type": "string" }
+      },
+      "required": ["athleteId", "badgeType", "awardedAt"]
+    }
+  },
+  "firestore": {
+    "/athletes/{athleteId}": {
+      "schema": "Athlete",
+      "description": "Collection of all student athletes"
+    },
+    "/trials/{trialId}": {
+      "schema": "Trial",
+      "description": "Collection of all performance trials"
+    },
+    "/badges/{badgeId}": {
+      "schema": "Badge",
+      "description": "Collection of earned badges"
+    }
+  }
+}
