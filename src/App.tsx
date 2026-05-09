@@ -45,7 +45,8 @@ import {
   History,
   Scale,
   Activity,
-  AlertCircle
+  AlertCircle,
+  Fingerprint
 } from 'lucide-react';
 import { 
   Card, 
@@ -104,11 +105,11 @@ const SidebarItem = ({ icon: Icon, label, active, onClick }: { icon: any, label:
     onClick={onClick}
     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 group ${
       active 
-        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200 dark:shadow-none scale-[1.02]' 
-        : 'hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-900 dark:hover:text-white'
+        ? 'bg-indigo-600 text-white shadow-lg' 
+        : 'hover:bg-indigo-50/50 dark:hover:bg-slate-700/50 text-slate-500 hover:text-slate-900 dark:hover:text-white'
     }`}
   >
-    <Icon className={`w-5 h-5 transition-transform duration-300 ${active ? 'scale-110' : 'group-hover:scale-110'}`} />
+    <Icon className="w-5 h-5" />
     <span className="text-sm font-bold tracking-tight">{label}</span>
   </button>
 );
@@ -124,20 +125,26 @@ const MobileNavItem = ({ icon: Icon, active, onClick, className = "" }: { icon: 
   </button>
 );
 
-const MetricCard = ({ title, value, icon: Icon, description, trend }: { title: string, value: string | number, icon: any, description?: string, trend?: string }) => (
-  <Card className="rounded-3xl border-slate-200 shadow-sm dark:border-slate-700 transition-all hover:shadow-md hover:border-indigo-200 dark:hover:border-indigo-900 group">
+const MetricCard = ({ title, value, icon: Icon, description, trend, iconColor = 'text-blue-600' }: { title: string, value: string | number, icon: any, description?: string, trend?: string, iconColor?: string }) => (
+  <Card className="rounded-3xl border-border shadow-sm transition-all hover:shadow-md group bg-card backdrop-blur-sm">
     <CardContent className="p-4 md:p-6">
       <div className="flex items-center justify-between">
         <div className="space-y-0.5 md:space-y-1">
-          <p className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 group-hover:text-indigo-400 transition-colors">{title}</p>
+          <p className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground group-hover:text-primary transition-colors">{title}</p>
           <div className="flex items-baseline gap-1.5 md:gap-2">
-            <h3 className="text-2xl md:text-3xl font-black text-slate-800 dark:text-white tabular-nums">{value}</h3>
-            {trend && <span className="text-[9px] md:text-[10px] font-black text-emerald-500 uppercase tracking-widest">{trend}</span>}
+            <h3 className="text-2xl md:text-3xl font-black text-foreground tabular-nums tracking-tight">{value}</h3>
+            {trend && <span className={`text-[9px] md:text-[10px] font-black uppercase tracking-widest ${trend.startsWith('+') ? 'text-emerald-600' : 'text-rose-600'}`}>{trend}</span>}
           </div>
-          {description && <p className="text-[10px] md:text-xs font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap">{description}</p>}
+          {description && <p className="text-[10px] md:text-xs font-semibold text-muted-foreground whitespace-nowrap">{description}</p>}
         </div>
-        <div className="p-3 md:p-4 bg-slate-50 dark:bg-slate-700 rounded-xl md:rounded-2xl group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/30 transition-colors">
-          <Icon className="w-5 h-5 md:w-6 md:h-6 text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors" />
+        <div className={`p-3 md:p-4 rounded-xl md:rounded-2xl transition-all duration-300 ${
+          iconColor.includes('blue') || iconColor.includes('indigo') ? 'bg-blue-50 dark:bg-blue-900/20' :
+          iconColor.includes('emerald') || iconColor.includes('green') ? 'bg-emerald-50 dark:bg-emerald-900/20' :
+          iconColor.includes('amber') || iconColor.includes('orange') || iconColor.includes('yellow') ? 'bg-amber-50 dark:bg-amber-900/20' :
+          iconColor.includes('rose') || iconColor.includes('red') ? 'bg-rose-50 dark:bg-rose-900/20' :
+          'bg-muted'
+        } group-hover:scale-110 shadow-sm group-hover:shadow-md group-hover:rotate-3`}>
+          <Icon className={`w-5 h-5 md:w-6 md:h-6 ${iconColor}`} />
         </div>
       </div>
     </CardContent>
@@ -151,14 +158,31 @@ export default function App() {
   const [athletes, setAthletes] = React.useState<Athlete[]>([]);
   const [trials, setTrials] = React.useState<Trial[]>([]);
   const [activeTab, setActiveTab] = React.useState('dashboard');
-  const [isDarkMode, setIsDarkMode] = React.useState(false);
+  const [isDarkMode, setIsDarkMode] = React.useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('theme');
+      if (saved) return saved === 'dark';
+      return typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)').matches : false;
+    }
+    return false;
+  });
   const [isLoading, setIsLoading] = React.useState(true);
 
   // Theme support
   React.useEffect(() => {
     const root = window.document.documentElement;
-    if (isDarkMode) root.classList.add('dark');
-    else root.classList.remove('dark');
+    const body = window.document.body;
+    if (isDarkMode) {
+      root.classList.add('dark');
+      body.classList.add('dark');
+      root.style.colorScheme = 'dark';
+      localStorage.setItem('theme', 'dark');
+    } else {
+      root.classList.remove('dark');
+      body.classList.remove('dark');
+      root.style.colorScheme = 'light';
+      localStorage.setItem('theme', 'light');
+    }
   }, [isDarkMode]);
 
   // Auth logic
@@ -211,7 +235,7 @@ export default function App() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 dark:bg-slate-900 transition-colors duration-500">
+      <div className={`min-h-screen bg-background flex flex-col items-center justify-center p-6 transition-colors duration-300 ${isDarkMode ? 'dark' : ''}`}>
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -221,23 +245,23 @@ export default function App() {
             <div className="mx-auto w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-2xl">
               <Trophy className="w-8 h-8 text-white" />
             </div>
-            <h1 className="text-4xl font-extrabold tracking-tight text-slate-800 dark:text-white uppercase italic">Kreeda-Prerana</h1>
-            <p className="text-slate-500 text-lg italic dark:text-slate-400">"Identifying the Diamonds in the Rough"</p>
+            <h1 className="text-4xl font-extrabold tracking-tight text-foreground uppercase italic">Kreeda-Prerana</h1>
+            <p className="text-muted-foreground text-lg italic mt-2">"Identifying the Diamonds in the Rough"</p>
           </div>
           
-          <Card className="border-border/50 shadow-xl overflow-hidden rounded-3xl">
+          <Card className="border-border/50 shadow-xl overflow-hidden rounded-3xl bg-card">
             <CardContent className="p-10 space-y-8">
-              <p className="text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
+              <p className="text-foreground leading-relaxed font-medium">
                 The professional digital scout for physical education teachers. 
                 Record milestones, track progress, and discover the next national champion.
               </p>
-              <Button onClick={handleSignIn} className="w-full h-14 text-lg rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 dark:shadow-none transition-all active:scale-95" size="lg">
+              <Button onClick={handleSignIn} className="w-full h-14 text-lg rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/20 dark:shadow-none transition-all active:scale-95" size="lg">
                 Continue with Google
               </Button>
             </CardContent>
           </Card>
           
-          <div className="flex justify-center gap-8 text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">
+          <div className="flex justify-center gap-8 text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em]">
             <span>Kabaddi</span>
             <span>Athletics</span>
             <span>Kho-Kho</span>
@@ -249,43 +273,39 @@ export default function App() {
 
   return (
     <TooltipProvider>
-      <div className="flex h-screen w-full flex-col bg-slate-50 font-sans text-slate-900 dark:bg-slate-900 dark:text-slate-100 transition-colors overflow-hidden">
+      <div className={`flex min-h-screen w-full flex-col font-sans transition-colors duration-300 overflow-hidden relative text-foreground ${isDarkMode ? 'dark' : ''}`}>
+        {/* Unified Background Component */}
+        <div className="fixed inset-0 bg-background transition-colors duration-300 -z-50" />
+        
         {/* Header - Refined for mobile */}
-        <header className="flex h-14 md:h-16 w-full items-center justify-between border-b border-slate-200 bg-white/80 backdrop-blur-md px-4 md:px-8 dark:bg-slate-800/80 dark:border-slate-700 z-50 sticky top-0">
+        <header className="flex h-14 md:h-16 w-full items-center justify-between border-b border-border bg-card/95 backdrop-blur-md px-4 md:px-8 z-50 sticky top-0 transition-colors duration-300">
           <div className="flex items-center gap-2 md:gap-3">
-            <div className="flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-md shadow-indigo-200/50">
+            <div className="flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-md shadow-indigo-500/20">
               <Trophy className="h-5 w-5 md:h-6 md:w-6" />
             </div>
-            <h1 className="text-base md:text-xl font-black tracking-tight text-slate-800 uppercase italic dark:text-white">
-              Kreeda<span className="hidden xs:inline">-Prerana</span> <span className="font-normal text-indigo-600 dark:text-indigo-400">Scout</span>
+            <h1 className="text-base md:text-xl font-black tracking-tight text-foreground uppercase italic leading-none">
+              Kreeda<span className="hidden xs:inline">-Prerana</span> <span className="font-normal text-primary">Scout</span>
             </h1>
           </div>
-          <nav className="flex items-center gap-2 md:gap-6">
-            <div className="hidden sm:flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 p-1 dark:bg-slate-700 dark:border-slate-600">
-              <button 
-                onClick={() => setIsDarkMode(false)}
-                className={`rounded-full px-3 md:px-4 py-1 text-[9px] font-bold uppercase tracking-widest transition-all ${!isDarkMode ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}
-              >
-                Light
-              </button>
-              <button 
-                onClick={() => setIsDarkMode(true)}
-                className={`rounded-full px-3 md:px-4 py-1 text-[9px] font-bold uppercase tracking-widest transition-all ${isDarkMode ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500'}`}
-              >
-                Dark
-              </button>
-            </div>
-            <div className="hidden sm:block h-6 w-px bg-slate-200 dark:bg-slate-700"></div>
+          <nav className="flex items-center gap-2 md:gap-4">
+            <button 
+              onClick={() => setIsDarkMode(!isDarkMode)} 
+              className="p-2 md:p-2.5 rounded-xl bg-background hover:bg-accent transition-all border border-border text-muted-foreground active:scale-95"
+              title="Toggle Theme"
+            >
+              {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </button>
+            <div className="hidden sm:block h-6 w-px bg-border"></div>
             <div className="flex items-center gap-2 md:gap-3">
               <div className="text-right hidden md:block">
-                <p className="text-xs font-bold text-slate-800 dark:text-white">{user.displayName || 'Coach'}</p>
-                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Certified Physical Educator</p>
+                <p className="text-xs font-bold text-foreground leading-none">{user.displayName || 'Coach'}</p>
+                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-tight mt-1">Certified PE Educator</p>
               </div>
-              <div className="h-8 w-8 md:h-10 md:w-10 rounded-full border-2 border-indigo-100 bg-slate-100 dark:bg-slate-700 overflow-hidden flex items-center justify-center shrink-0">
-                {user.photoURL ? <img src={user.photoURL} alt="User" referrerPolicy="no-referrer" className="w-full h-full object-cover" /> : <Users className="w-4 h-4 md:w-5 md:h-5 text-slate-400" />}
+              <div className="h-8 w-8 md:h-10 md:w-10 rounded-full border-2 border-indigo-100 dark:border-indigo-900 bg-muted overflow-hidden flex items-center justify-center shrink-0">
+                {user.photoURL ? <img src={user.photoURL} alt="User" referrerPolicy="no-referrer" className="w-full h-full object-cover" /> : <Users className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground" />}
               </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={handleSignOut} className="h-8 w-8 rounded-full hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors">
+            <Button variant="ghost" size="icon" onClick={handleSignOut} className="h-8 w-8 rounded-full hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
                <LogOut className="w-4 h-4 md:w-5 md:h-5" />
             </Button>
           </nav>
@@ -293,9 +313,9 @@ export default function App() {
 
         <div className="flex flex-1 overflow-hidden relative">
           {/* Sidebar - Desktop Only */}
-          <aside className="hidden md:flex w-72 flex-shrink-0 flex-col border-r border-slate-200 bg-white dark:bg-slate-800 dark:border-slate-700">
+          <aside className="hidden md:flex w-72 flex-shrink-0 flex-col border-r border-border bg-card transition-colors duration-300">
             <div className="p-6">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Main Menu</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-4">Main Menu</p>
               <nav className="space-y-2">
                 <SidebarItem icon={LayoutDashboard} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
                 <SidebarItem icon={Users} label="Athlete Records" active={activeTab === 'athletes'} onClick={() => setActiveTab('athletes')} />
@@ -306,25 +326,25 @@ export default function App() {
             
             <div className="flex-1 px-6 overflow-y-auto">
               <Separator className="mb-6 opacity-30" />
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Active Profiles</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-4">Active Profiles</p>
               <div className="space-y-3">
                    {athletes.slice(0, 4).map(athlete => (
-                      <div key={athlete.id} className="group cursor-pointer rounded-xl border border-transparent p-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                      <div key={athlete.id} className="group cursor-pointer rounded-xl border border-transparent p-3 hover:bg-accent transition-colors">
                         <div className="flex items-center justify-between mb-1">
-                          <p className="text-sm font-bold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 transition-colors">{athlete.name}</p>
-                          <UIBadge variant="outline" className="text-[8px] font-black uppercase bg-indigo-50 text-indigo-600 border-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-400">Class {athlete.schoolClass}</UIBadge>
+                          <p className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">{athlete.name}</p>
+                          <UIBadge variant="outline" className="text-[8px] font-black uppercase bg-primary/10 text-primary border-primary/20">Class {athlete.schoolClass}</UIBadge>
                         </div>
-                        <p className="text-[10px] font-medium text-slate-500">{athlete.primarySport}</p>
+                        <p className="text-[10px] font-medium text-muted-foreground">{athlete.primarySport}</p>
                       </div>
                    ))}
-                   {athletes.length === 0 && <p className="text-xs text-slate-400 italic font-medium px-2">No profiles yet</p>}
+                   {athletes.length === 0 && <p className="text-xs text-muted-foreground italic font-medium px-2">No profiles yet</p>}
               </div>
             </div>
 
             <div className="p-6 pb-20 md:pb-6">
               <Button 
                 onClick={() => { setActiveTab('trials'); }}
-                className="w-full flex items-center justify-center gap-2 rounded-2xl bg-slate-900 dark:bg-indigo-600 dark:hover:bg-indigo-700 py-6 text-sm font-bold text-white hover:bg-slate-800 transition-all shadow-lg active:scale-95"
+                className="w-full flex items-center justify-center gap-2 rounded-2xl bg-slate-900 dark:bg-primary py-6 text-sm font-bold text-white hover:bg-slate-800 dark:hover:bg-primary/90 transition-all shadow-lg active:scale-95"
               >
                 <Plus className="w-4 h-4" />
                 New Trial Session
@@ -369,7 +389,7 @@ export default function App() {
             <div className="relative -top-4">
               <button 
                 onClick={() => setActiveTab('trials')}
-                className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl transition-all active:scale-90 ${activeTab === 'trials' ? 'bg-indigo-600 text-white shadow-indigo-300' : 'bg-slate-900 text-white shadow-slate-400'}`}
+                className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl transition-all active:scale-95 ${activeTab === 'trials' ? 'bg-indigo-600 text-white shadow-indigo-300' : 'bg-slate-900 text-white shadow-slate-400'}`}
               >
                 <Plus className="w-6 h-6" />
               </button>
@@ -403,6 +423,9 @@ function DashboardView({ athletes, trials }: { athletes: Athlete[], trials: Tria
       .slice(-7);
   }, [trials]);
 
+  const avgSprint = trials.length > 0 ? (trials.filter(t => t.type === 'sprint_100m').reduce((acc, t) => acc + t.value, 0) / (trials.filter(t => t.type === 'sprint_100m').length || 1)).toFixed(2) : '12.4';
+  const avgJump = trials.length > 0 ? (trials.filter(t => t.type === 'long_jump').reduce((acc, t) => acc + t.value, 0) / (trials.filter(t => t.type === 'long_jump').length || 1)).toFixed(2) : '2.1';
+
   return (
     <div className="space-y-6 md:space-y-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -410,32 +433,35 @@ function DashboardView({ athletes, trials }: { athletes: Athlete[], trials: Tria
           <h1 className="text-2xl md:text-3xl font-black tracking-tight text-slate-800 dark:text-white">Regional Scouting Hub</h1>
           <p className="text-xs md:text-sm font-medium text-slate-500">Analytics overview for your athlete development pipeline.</p>
         </div>
-        <div className="flex items-center gap-3 px-3 py-1.5 md:px-4 md:py-2 bg-white dark:bg-slate-800 border rounded-2xl shadow-sm w-fit">
+        <div className="flex items-center gap-3 px-3 py-1.5 md:px-4 md:py-2 bg-card border border-border rounded-2xl shadow-sm w-fit">
           <div className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-indigo-600 rounded-full animate-ping" />
-            <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-300">Live Telemetry</span>
+            <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-primary rounded-full animate-ping" />
+            <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-muted-foreground">Live Telemetry</span>
           </div>
           <Separator orientation="vertical" className="h-3 md:h-4" />
-          <span className="text-[8px] md:text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">Portal Sync</span>
+          <span className="text-[8px] md:text-[10px] font-black text-primary uppercase tracking-widest">Portal Sync</span>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-        <MetricCard title="Enrollment" value={totalStudents} icon={Users} description="Athletes in database" trend="+4.2%" />
-        <MetricCard title="Test Volume" value={totalTrials} icon={Timer} description="Total performance points" trend="+18.5%" />
-        <MetricCard title="Elite Zone" value={Math.floor(totalStudents * 0.15)} icon={Award} description="Candidates for State" trend="Top 15%" />
-      </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            <MetricCard title="Enrollment" value={totalStudents} icon={Users} description="Athletes in database" trend="+4.2%" iconColor="text-blue-600" />
+            <MetricCard title="Test Volume" value={totalTrials} icon={Timer} description="Total performance points" trend="+18.5%" iconColor="text-emerald-600" />
+            <MetricCard title="Elite Zone" value={Math.floor(totalStudents * 0.15)} icon={Award} description="Candidates for State" trend="Top 15%" iconColor="text-amber-500" />
+            <MetricCard title="Avg Sprint" value={`${avgSprint}s`} icon={Activity} description="100m Regional Average" trend="-0.4s" iconColor="text-rose-500" />
+            <MetricCard title="Jump Avg" value={`${avgJump}m`} icon={TrendingUp} description="Broad Jump Standard" trend="+0.1m" iconColor="text-green-600" />
+            <MetricCard title="Active Scouters" value="48" icon={Fingerprint} description="Regional verification active" trend="Live" iconColor="text-indigo-600" />
+          </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        <Card className="lg:col-span-12 xl:col-span-7 rounded-3xl border-slate-200 shadow-sm dark:border-slate-700">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-6 border-b border-slate-50 dark:border-slate-700/50">
+        <Card className="lg:col-span-12 xl:col-span-7 rounded-3xl shadow-sm bg-card border-none">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-6 border-b border-border bg-card">
             <div>
               <CardTitle className="text-sm font-black uppercase tracking-[0.2em] flex items-center gap-3">
-                <TrendingUp className="w-4 h-4 text-indigo-600" />
+                <TrendingUp className="w-4 h-4 text-primary" />
                 Talent Pipeline Growth
               </CardTitle>
             </div>
-            <UIBadge variant="secondary" className="bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 border-none rounded-lg px-3 py-1 font-bold text-[9px]">Last 7 Days</UIBadge>
+            <UIBadge variant="secondary" className="bg-muted text-muted-foreground border-none rounded-lg px-3 py-1 font-bold text-[9px]">Last 7 Days</UIBadge>
           </CardHeader>
           <CardContent className="h-[350px] pt-8">
              <ResponsiveContainer width="100%" height="100%">
@@ -453,30 +479,30 @@ function DashboardView({ athletes, trials }: { athletes: Athlete[], trials: Tria
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-12 xl:col-span-5 rounded-3xl border-slate-200 shadow-sm dark:border-slate-700 overflow-hidden">
-          <CardHeader className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-700/50">
+        <Card className="lg:col-span-12 xl:col-span-12 rounded-3xl border-none shadow-sm bg-card overflow-hidden">
+          <CardHeader className="bg-muted/50 border-b border-border">
             <CardTitle className="text-sm font-black uppercase tracking-[0.2em] flex items-center gap-3">
-              <History className="w-4 h-4 text-indigo-600" />
+              <History className="w-4 h-4 text-rose-500" />
               Recent Scout Logs
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
+            <div className="divide-y divide-border">
               {recentTrials.length > 0 ? recentTrials.map((trial) => {
                 const athlete = athletes.find(a => a.id === trial.athleteId);
                 return (
-                  <div key={trial.id} className="flex items-center justify-between p-5 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors group">
+                  <div key={trial.id} className="flex items-center justify-between p-5 hover:bg-accent transition-colors group">
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-900/50 flex items-center justify-center text-xs font-black text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform">
+                      <div className="w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-xs font-black text-primary group-hover:scale-110 transition-transform">
                         {athlete?.name.charAt(0)}
                       </div>
                       <div>
-                        <p className="text-sm font-black text-slate-800 dark:text-slate-200 tracking-tight">{athlete?.name || 'Unknown'}</p>
-                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">{TRIAL_LABELS[trial.type]}</p>
+                        <p className="text-sm font-black text-foreground tracking-tight">{athlete?.name || 'Unknown'}</p>
+                        <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">{TRIAL_LABELS[trial.type]}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-base font-black tabular-nums text-slate-800 dark:text-white">{trial.value}<span className="text-[10px] ml-0.5 text-slate-400">{trial.unit}</span></p>
+                      <p className="text-base font-black tabular-nums text-foreground">{trial.value}<span className="text-[10px] ml-0.5 text-muted-foreground">{trial.unit}</span></p>
                       <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest">Verified</p>
                     </div>
                   </div>
@@ -545,7 +571,7 @@ function AthletesView({ athletes, trials, userId }: { athletes: Athlete[], trial
             </Button>
           </DialogTrigger>
           <DialogContent className="w-[95%] max-w-[450px] rounded-[2rem] md:rounded-[2.5rem] border-2 shadow-2xl p-0 overflow-hidden">
-            <div className="bg-slate-50 dark:bg-slate-800 p-8 border-b">
+            <div className="bg-white dark:bg-slate-800 p-8 border-b">
               <DialogHeader>
                 <DialogTitle className="text-xl font-black">Athlete Registration</DialogTitle>
                 <CardDescription className="font-medium text-slate-500">Create a digital scouting profile for the Khelo India pipeline.</CardDescription>
@@ -560,18 +586,18 @@ function AthletesView({ athletes, trials, userId }: { athletes: Athlete[], trial
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="age" className="text-[10px] font-black uppercase tracking-widest text-slate-400">Current Age</Label>
-                    <Input id="age" type="number" placeholder="14" className="h-12 rounded-xl bg-slate-50 dark:bg-slate-800 border-none font-bold" value={newAthlete.age} onChange={e => setNewAthlete({...newAthlete, age: e.target.value})} required />
+                    <Input id="age" type="number" placeholder="14" className="h-12 rounded-xl bg-white dark:bg-slate-800 border-none font-bold shadow-sm" value={newAthlete.age} onChange={e => setNewAthlete({...newAthlete, age: e.target.value})} required />
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="class" className="text-[10px] font-black uppercase tracking-widest text-slate-400">School Class</Label>
-                    <Input id="class" placeholder="Grade 9" className="h-12 rounded-xl bg-slate-50 dark:bg-slate-800 border-none font-bold" value={newAthlete.schoolClass} onChange={e => setNewAthlete({...newAthlete, schoolClass: e.target.value})} required />
+                    <Input id="class" placeholder="Grade 9" className="h-12 rounded-xl bg-white dark:bg-slate-800 border-none font-bold shadow-sm" value={newAthlete.schoolClass} onChange={e => setNewAthlete({...newAthlete, schoolClass: e.target.value})} required />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="gender" className="text-[10px] font-black uppercase tracking-widest text-slate-400">Gender</Label>
                     <Select value={newAthlete.gender} onValueChange={v => setNewAthlete({...newAthlete, gender: v as any})}>
-                      <SelectTrigger className="h-12 border-none bg-slate-50 dark:bg-slate-800 rounded-xl font-bold">
+                      <SelectTrigger className="h-12 border-none bg-white dark:bg-slate-800 rounded-xl font-bold shadow-sm">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -584,7 +610,7 @@ function AthletesView({ athletes, trials, userId }: { athletes: Athlete[], trial
                   <div className="grid gap-2">
                     <Label htmlFor="sport" className="text-[10px] font-black uppercase tracking-widest text-slate-400">Primary Core Sport</Label>
                     <Select value={newAthlete.primarySport} onValueChange={v => setNewAthlete({...newAthlete, primarySport: v})}>
-                      <SelectTrigger className="h-12 border-none bg-slate-50 dark:bg-slate-800 rounded-xl font-bold">
+                      <SelectTrigger className="h-12 border-none bg-white dark:bg-slate-800 rounded-xl font-bold shadow-sm">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -605,11 +631,11 @@ function AthletesView({ athletes, trials, userId }: { athletes: Athlete[], trial
 
       <div className="relative group">
         <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-          <Search className="w-4 h-4 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
+          <Search className="w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
         </div>
         <Input 
           placeholder="Search identity or class..." 
-          className="pl-12 h-14 rounded-2xl bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-sm focus-visible:ring-indigo-600 font-medium"
+          className="pl-12 h-14 rounded-2xl bg-card border-border shadow-sm focus-visible:ring-primary font-medium"
           value={searchTerm}
           onChange={e => setSearchTerm(e.target.value)}
         />
@@ -623,16 +649,16 @@ function AthletesView({ athletes, trials, userId }: { athletes: Athlete[], trial
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
           >
-            <Card className="group hover:border-indigo-600/50 transition-all shadow-sm hover:shadow-xl dark:shadow-none bg-white dark:bg-slate-800 rounded-3xl border-2 overflow-hidden">
+            <Card className="group rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
               <CardContent className="p-0">
                 <div className="p-6 space-y-6">
                    <div className="flex items-start justify-between">
                     <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 bg-slate-50 dark:bg-slate-700 rounded-2xl flex items-center justify-center border-2 border-slate-100 dark:border-slate-600 group-hover:border-indigo-100 dark:group-hover:border-indigo-900 transition-colors">
-                        <span className="text-2xl font-black text-slate-800 dark:text-white uppercase italic">{athlete.name.charAt(0)}</span>
+                      <div className="w-16 h-16 bg-white dark:bg-slate-700 rounded-2xl flex items-center justify-center border-2 border-slate-200 dark:border-slate-600 group-hover:bg-blue-600 transition-colors duration-500 shadow-sm">
+                        <span className="text-2xl font-black text-slate-800 dark:text-white uppercase italic group-hover:text-white transition-colors">{athlete.name.charAt(0)}</span>
                       </div>
                       <div>
-                        <h3 className="font-black text-lg text-slate-800 dark:text-white tracking-tight group-hover:text-indigo-600 transition-colors">{athlete.name}</h3>
+                        <h3 className="font-black text-lg text-slate-800 dark:text-white tracking-tight group-hover:text-indigo-600 transition-colors truncate max-w-[120px]">{athlete.name}</h3>
                         <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest leading-normal">District Class {athlete.schoolClass}</p>
                       </div>
                     </div>
@@ -642,7 +668,14 @@ function AthletesView({ athletes, trials, userId }: { athletes: Athlete[], trial
                   </div>
                   
                   <div className="flex flex-wrap gap-2">
-                    <UIBadge variant="secondary" className="bg-indigo-50 text-indigo-600 dark:bg-indigo-950/30 dark:text-indigo-400 border-none rounded-lg font-bold px-3 py-1 text-[10px] uppercase tracking-wider">{athlete.primarySport}</UIBadge>
+                    <UIBadge variant="secondary" className={`border-none rounded-lg font-bold px-3 py-1 text-[10px] uppercase tracking-wider ${
+                      athlete.primarySport === 'Athletics' ? 'bg-rose-50 text-rose-600 dark:bg-rose-950/30 dark:text-rose-400' :
+                      athlete.primarySport === 'Kabaddi' ? 'bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400' :
+                      athlete.primarySport === 'Kho-Kho' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400' :
+                      'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/30 dark:text-indigo-400'
+                    }`}>
+                      {athlete.primarySport}
+                    </UIBadge>
                     <UIBadge variant="outline" className="rounded-lg font-black text-[9px] px-3 py-1 uppercase tracking-widest text-slate-400 border-slate-200">{athlete.gender}</UIBadge>
                     <UIBadge variant="outline" className="rounded-lg font-black text-[9px] px-3 py-1 uppercase tracking-widest text-slate-400 border-slate-200">{athlete.age} Yrs</UIBadge>
                   </div>
@@ -710,20 +743,20 @@ function AthleteDetails({ athlete, trials }: { athlete: Athlete, trials: Trial[]
           </div>
         </div>
         
-        <div className="p-6 md:p-10 space-y-6 md:space-y-10 dark:bg-slate-900 max-h-[70vh] overflow-y-auto">
+        <div className="p-6 md:p-10 space-y-6 md:space-y-10 dark:bg-slate-900 max-h-[70vh] overflow-y-auto bg-white">
           <div className="grid grid-cols-1 xs:grid-cols-3 gap-4 md:gap-6">
-             <div className="bg-slate-50 dark:bg-slate-800 p-4 md:p-6 rounded-2xl md:rounded-3xl border border-slate-100 dark:border-slate-700 text-center group hover:bg-indigo-50 dark:hover:bg-indigo-900/10 transition-colors">
-                <p className="text-[8px] md:text-[9px] font-black uppercase text-slate-400 tracking-[0.2em] mb-1 md:mb-2 group-hover:text-indigo-500 transition-colors">Total Trials</p>
+             <div className="bg-white dark:bg-slate-800 p-4 md:p-6 rounded-2xl md:rounded-3xl border border-slate-100 dark:border-slate-700 text-center group hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-colors shadow-sm">
+                <p className="text-[8px] md:text-[9px] font-black uppercase text-slate-400 tracking-[0.2em] mb-1 md:mb-2 group-hover:text-blue-500 transition-colors">Total Trials</p>
                 <p className="text-2xl md:text-4xl font-black text-slate-800 dark:text-white">{trials.length}</p>
              </div>
-             <div className="bg-slate-50 dark:bg-slate-800 p-4 md:p-6 rounded-2xl md:rounded-3xl border border-slate-100 dark:border-slate-700 text-center group hover:bg-emerald-50 dark:hover:bg-emerald-900/10 transition-colors">
+             <div className="bg-white dark:bg-slate-800 p-4 md:p-6 rounded-2xl md:rounded-3xl border border-slate-100 dark:border-slate-700 text-center group hover:bg-emerald-50 dark:hover:bg-emerald-900/10 transition-colors shadow-sm">
                 <p className="text-[8px] md:text-[9px] font-black uppercase text-slate-400 tracking-[0.2em] mb-1 md:mb-2 group-hover:text-emerald-500 transition-colors">Sprint Peak</p>
                 <div className="flex items-baseline justify-center gap-1">
                   <p className="text-2xl md:text-4xl font-black text-slate-800 dark:text-white tabular-nums">{bestSprint?.value || '--'}</p>
                   <span className="text-[10px] md:text-xs font-bold text-slate-400 italic">s</span>
                 </div>
              </div>
-             <div className="bg-slate-50 dark:bg-slate-800 p-4 md:p-6 rounded-2xl md:rounded-3xl border border-slate-100 dark:border-slate-700 text-center group hover:bg-amber-50 dark:hover:bg-amber-900/10 transition-colors">
+             <div className="bg-white dark:bg-slate-800 p-4 md:p-6 rounded-2xl md:rounded-3xl border border-slate-100 dark:border-slate-700 text-center group hover:bg-amber-50 dark:hover:bg-amber-900/10 transition-colors shadow-sm">
                 <p className="text-[8px] md:text-[9px] font-black uppercase text-slate-400 tracking-[0.2em] mb-1 md:mb-2 group-hover:text-amber-500 transition-colors">Jump Peak</p>
                 <div className="flex items-baseline justify-center gap-1">
                   <p className="text-2xl md:text-4xl font-black text-slate-800 dark:text-white tabular-nums">{bestJump?.value || '--'}</p>
@@ -848,12 +881,14 @@ function TrialsView({ athletes, trials, userId }: { athletes: Athlete[], trials:
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 md:gap-8">
-        <Card className="xl:col-span-8 rounded-[2rem] md:rounded-[2.5rem] bg-white dark:bg-slate-800 border-2 shadow-sm overflow-hidden border-slate-200 dark:border-slate-700">
-          <CardHeader className="bg-slate-50 dark:bg-slate-900/50 p-6 md:p-8 border-b dark:border-slate-700/50">
+        <Card className="xl:col-span-8 bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
+          <CardHeader className="bg-white dark:bg-slate-950/50 p-6 md:p-8 border-b border-slate-100 dark:border-slate-800 transition-colors">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="space-y-1 text-center sm:text-left">
-                <CardTitle className="text-lg md:text-xl font-black">Performance Chronometer</CardTitle>
-                <CardDescription className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600">Precision ±0.01s • Verified Capture</CardDescription>
+                <CardTitle className="text-lg md:text-xl font-bold">Performance Chronometer</CardTitle>
+                <CardDescription className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600">
+                  <Activity className="w-3 h-3 inline-block animate-pulse mr-1" /> Precision ±0.01s • Verified Capture
+                </CardDescription>
               </div>
               <div className="flex flex-col xs:flex-row items-center gap-2 md:gap-3 w-full sm:w-auto">
                  <Select value={trialType} onValueChange={v => setTrialType(v as TrialType)}>
@@ -911,23 +946,20 @@ function TrialsView({ athletes, trials, userId }: { athletes: Athlete[], trials:
               </div>
 
               <div className="flex-1 w-full space-y-4 md:space-y-6">
-                <div className="p-6 md:p-8 rounded-[1.5rem] md:rounded-[2rem] bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 shadow-inner relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 p-4 md:p-6 opacity-5 group-hover:opacity-10 transition-opacity">
-                    <Timer className="w-16 h-16 md:w-24 md:h-24" />
-                  </div>
-                  <div className="flex justify-between items-start mb-3 md:mb-4 relative z-10">
+                <div className="p-6 md:p-8 rounded-[1.5rem] md:rounded-[2rem] bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 relative overflow-hidden group">
+                  <div className="flex justify-between items-start mb-3 md:mb-4">
                      <span className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Active Candidate</span>
-                     <UIBadge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-[7px] md:text-[8px] font-black uppercase tracking-widest">Live Feed</UIBadge>
+                     <UIBadge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-[7px] md:text-[8px] font-black uppercase">Live Feed</UIBadge>
                   </div>
-                  <h3 className="text-2xl md:text-3xl font-black text-slate-800 dark:text-white tracking-tighter mb-4 italic truncate">{athleteName}</h3>
+                  <h3 className="text-2xl md:text-3xl font-bold text-slate-800 dark:text-white mb-4 truncate">{athleteName}</h3>
                   <div className="grid grid-cols-2 gap-3 md:gap-4">
                     <div className="p-2.5 md:p-3 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 text-center sm:text-left">
                        <p className="text-[7px] md:text-[8px] font-black uppercase text-slate-400 mb-0.5 md:mb-1">Target Pace</p>
-                       <p className="text-xs md:text-sm font-black text-indigo-600">12.50s</p>
+                       <p className="text-xs md:text-sm font-bold text-indigo-600">12.50s</p>
                     </div>
                     <div className="p-2.5 md:p-3 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 text-center sm:text-left">
                        <p className="text-[7px] md:text-[8px] font-black uppercase text-slate-400 mb-0.5 md:mb-1">Session Best</p>
-                       <p className="text-xs md:text-sm font-black text-slate-800 dark:text-white">13.12s</p>
+                       <p className="text-xs md:text-sm font-bold text-slate-800 dark:text-white">13.12s</p>
                     </div>
                   </div>
                 </div>
@@ -944,9 +976,9 @@ function TrialsView({ athletes, trials, userId }: { athletes: Athlete[], trials:
           </CardContent>
         </Card>
 
-        <Card className="xl:col-span-4 rounded-[2rem] md:rounded-[2.5rem] bg-indigo-950 border-none shadow-2xl text-white overflow-hidden flex flex-col h-[400px] xl:h-auto">
+        <Card className="xl:col-span-4 rounded-3xl bg-slate-900 border-none shadow-xl text-white overflow-hidden flex flex-col h-[400px] xl:h-auto">
           <CardHeader className="p-6 md:p-8 border-b border-white/5 bg-white/5">
-             <CardTitle className="text-xs md:text-sm font-black uppercase tracking-[0.2em] md:tracking-[0.3em] text-slate-400">Live Result Stream</CardTitle>
+             <CardTitle className="text-xs md:text-sm font-black uppercase tracking-[0.2em] text-slate-400">Live Result Stream</CardTitle>
           </CardHeader>
           <CardContent className="flex-1 p-0 overflow-y-auto">
             <div className="divide-y divide-white/5">
@@ -1139,37 +1171,37 @@ function LeaderboardView({ athletes, trials }: { athletes: Athlete[], trials: Tr
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 items-start pb-10">
-        <Card className="lg:col-span-8 rounded-[2rem] md:rounded-[2.5rem] bg-white dark:bg-slate-800 border-2 shadow-sm overflow-hidden border-slate-200 dark:border-slate-700">
-          <CardHeader className="p-6 md:p-8 border-b border-slate-50 dark:border-slate-700/50">
+        <Card className="lg:col-span-8 rounded-[2rem] md:rounded-[2.5rem] bg-card border-none shadow-sm overflow-hidden transition-colors">
+          <CardHeader className="p-6 md:p-8 border-b border-border bg-card">
              <CardTitle className="text-lg md:text-xl font-black italic tracking-tighter">Top 10 Benchmark Leaders</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="divide-y divide-slate-50 dark:divide-slate-700/50">
+            <div className="divide-y divide-border">
               {leaderboard.map((entry, idx) => (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: idx * 0.05 }}
                   key={entry.athlete?.id}
-                  className="p-4 md:p-6 flex items-center justify-between group hover:bg-slate-50 dark:hover:bg-slate-700/20 transition-all"
+                  className="p-4 md:p-6 flex items-center justify-between group hover:bg-accent transition-all"
                 >
                   <div className="flex items-center gap-4 md:gap-8">
-                    <span className={`text-2xl md:text-4xl font-black italic tracking-tight ${idx < 3 ? 'text-indigo-600' : 'text-slate-200 dark:text-slate-700'} tabular-nums w-8 md:w-12 text-center`}>
+                    <span className={`text-2xl md:text-4xl font-black italic tracking-tight ${idx < 3 ? 'text-primary' : 'text-slate-300 dark:text-slate-700'} tabular-nums w-8 md:w-12 text-center`}>
                       {(idx + 1).toString().padStart(2, '0')}
                     </span>
                     <div className="flex items-center gap-3 md:gap-5">
-                       <div className="w-10 h-10 md:w-12 md:h-12 bg-slate-50 dark:bg-slate-700 rounded-xl md:rounded-2xl flex items-center justify-center border border-slate-100 dark:border-slate-600 group-hover:scale-110 transition-transform">
-                          <span className="text-base font-black text-slate-800 dark:text-white capitalize">{entry.athlete?.name.charAt(0)}</span>
+                       <div className="w-10 h-10 md:w-12 md:h-12 bg-muted rounded-xl md:rounded-2xl flex items-center justify-center border border-border group-hover:scale-110 transition-transform">
+                          <span className="text-base font-black text-foreground capitalize">{entry.athlete?.name.charAt(0)}</span>
                        </div>
-                       <div className="max-w-[120px] xs:max-w-none">
-                         <p className="text-sm md:text-base font-black text-slate-800 dark:text-white tracking-tight truncate">{entry.athlete?.name}</p>
-                         <p className="text-[8px] md:text-[10px] font-black uppercase text-slate-400 tracking-widest whitespace-nowrap overflow-hidden text-ellipsis">Class {entry.athlete?.schoolClass}</p>
+                       <div className="max-w-[120px] sm:max-w-none">
+                         <p className="text-sm md:text-base font-black text-foreground tracking-tight truncate">{entry.athlete?.name}</p>
+                         <p className="text-[8px] md:text-[10px] font-black uppercase text-muted-foreground tracking-widest whitespace-nowrap overflow-hidden text-ellipsis">Class {entry.athlete?.schoolClass}</p>
                        </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-4 md:gap-10">
                     <div className="text-right">
-                       <p className="text-lg md:text-2xl font-black tabular-nums text-slate-800 dark:text-white">{entry.value}<span className="text-[10px] ml-1 text-slate-400 italic">{unit}</span></p>
+                       <p className="text-lg md:text-2xl font-black tabular-nums text-foreground">{entry.value}<span className="text-[10px] ml-1 text-muted-foreground italic">{unit}</span></p>
                        <p className={`text-[7px] md:text-[9px] font-black uppercase tracking-widest ${idx === 0 ? 'text-amber-500' : 'text-emerald-500'}`}>
                          {idx === 0 ? 'Elite' : 'Ranked'}
                        </p>
