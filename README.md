@@ -1,7 +1,7 @@
 <h1 align="center">🏅 Kreeda Prerana Scout</h1>
 
 <p align="center">
-  A modern sports talent scouting platform built to support athlete discovery, profile management, and structured scouting workflows.
+  A mobile application for sports talent scouting, athlete discovery, and structured scouting workflows.
 </p>
 
 <p align="center">
@@ -9,21 +9,22 @@
   <br>
   <img src="https://img.shields.io/badge/Vite-Powered-646CFF?style=for-the-badge&logo=vite&logoColor=white" />
   <br>
-  <img src="https://img.shields.io/badge/Frontend-Web_App-0F172A?style=for-the-badge&logo=googlechrome&logoColor=white" />
+  <img src="https://img.shields.io/badge/Platform-Mobile_App-1F6FEB?style=for-the-badge&logo=android&logoColor=white" />
 </p>
 
 ---
 
 ## 📌 Overview
 
-Kreeda Prerana Scout is an internship project focused on building a professional web platform for sports talent identification and scouting workflows. The project is designed to provide a clean, structured, and user-friendly interface for managing athlete-related information and supporting digital scouting operations.
+Kreeda Prerana Scout is an internship project developed as a mobile app for sports talent identification and scouting workflows. It is designed to provide a clean, structured, and user-friendly experience for managing athlete information, supporting scouting activities, and improving the overall talent discovery process.
 
 ## ✨ Features
 
+- 📱 Mobile-first application design
 - 🧭 Clean and intuitive user interface
 - 🧩 Component-based architecture for scalability
-- ⚡ Fast frontend development with Vite
-- 🛠️ TypeScript-based codebase for maintainability
+- ⚡ Fast and maintainable development workflow
+- 🛠️ TypeScript-based codebase
 - 🔐 Environment configuration support
 - 📁 Organized project structure for future enhancements
 
@@ -44,6 +45,9 @@ Kreeda-Prerana-Scout/
 ├── src/
 ├── .env.example
 ├── components.json
+├── firebase-applet-config.json
+├── firebase-blueprint.json
+├── firestore.rules
 ├── index.html
 ├── metadata.json
 ├── package.json
@@ -88,15 +92,15 @@ Make sure you have the following installed:
 
 ## 🎯 Purpose
 
-This project was developed to demonstrate practical frontend development skills in a real internship setting. It reflects a structured approach to building a scouting-oriented application with emphasis on usability, maintainability, and professional project organization.
+This project was developed during an internship to demonstrate practical mobile application development skills in a sports scouting context. It reflects a professional approach to building a scalable and user-focused application for athlete discovery and scouting management.
 
 ## 📈 Future Improvements
 
-- Add athlete profile analytics
-- Improve scouting workflow management
-- Introduce role-based access or admin features
-- Enhance UI responsiveness and accessibility
-- Expand data handling and reporting features
+- Add athlete performance analytics
+- Improve scouting workflow and evaluation features
+- Introduce authentication and role-based access
+- Enhance mobile responsiveness and usability
+- Expand data handling, reporting, and profile management
 
 ## 👨‍💻 Author
 
