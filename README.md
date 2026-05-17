@@ -1,7 +1,3 @@
-<div align="center">
-  <img width="1200" height="475" alt="Kreeda Prerana Scout Banner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
-
 <h1 align="center">🏅 Kreeda Prerana Scout</h1>
 
 <p align="center">
@@ -10,7 +6,9 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/TypeScript-Enabled-3178C6?style=for-the-badge&logo=typescript&logoColor=white" />
+  <br>
   <img src="https://img.shields.io/badge/Vite-Powered-646CFF?style=for-the-badge&logo=vite&logoColor=white" />
+  <br>
   <img src="https://img.shields.io/badge/Frontend-Web_App-0F172A?style=for-the-badge&logo=googlechrome&logoColor=white" />
 </p>
 
